@@ -31,8 +31,9 @@ jobs:
           echo "${{ secrets.BASTION_SSH_KEY }}" > ~/.ssh/deploy.key
           chmod 600 ~/.ssh/deploy.key
 
-          ssh-keyscan -H ${{ secrets.BASTION_HOST }} >> ~/.ssh/known_hosts
-          ssh-keyscan -H ${{ secrets.NGINX2A_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -T 5 -H ${{ secrets.BASTION_HOST }} >> ~/.ssh/known_hosts || true
+          ssh-keyscan -T 5 -H ${{ secrets.NGINX2A_HOST }} >> ~/.ssh/known_hosts || true
+
 
       - name: Nginx에 dist 파일 올리기
         run: |
