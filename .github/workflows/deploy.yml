@@ -1,0 +1,52 @@
+name: React Deploy via ProxyJump
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build React
+        run: npm run build
+
+      - name: ssh 키 확인
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.BASTION_SSH_KEY }}" > ~/.ssh/deploy.key
+          chmod 600 ~/.ssh/deploy.key
+
+          ssh-keyscan -H ${{ secrets.BASTION_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.NGINX2A_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Nginx에 dist 파일 올리기
+        run: |
+          rsync -avz \
+            -e "ssh -i ~/.ssh/deploy.key -J ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}" \
+            dist/ \
+            ${{ secrets.NGINX2A_USER }}@${{ secrets.NGINX2A_HOST }}:/home/ubuntu/react-build/
+
+      - name: React 파일 보내기
+        run: |
+          ssh -i ~/.ssh/deploy.key \
+            -J ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }} \
+            ${{ secrets.NGINX2A_USER }}@${{ secrets.NGINX2A_HOST }} << 'EOF'
+              sudo rm -rf /var/www/react/*
+              sudo cp -r /home/ubuntu/react-build/* /var/www/react/
+              sudo systemctl reload nginx
+          EOF
