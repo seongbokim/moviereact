@@ -25,7 +25,7 @@ jobs:
       - name: Build React (dist)
         run: npm run build
 
-      # GitHub Actions → Bastion 접속용 키 세팅
+      # GitHub Actions → Bastion 접속용 SSH 키
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
@@ -50,12 +50,11 @@ jobs:
       - name: Deploy to nginx2a
         run: |
           ssh -i ~/.ssh/deploy.key \
-            ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }} << 'EOF'
-              rsync -avz ~/dist/ nginx2a:/home/ubuntu/dist/
-
-              ssh nginx2a << 'INNER'
-                sudo rm -rf /var/www/react/*
-                sudo cp -r /home/ubuntu/dist/* /var/www/react/
+            ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }} "
+              rsync -avz ~/dist/ nginx2a:/home/ubuntu/dist/ &&
+              ssh nginx2a '
+                sudo rm -rf /var/www/react/* &&
+                sudo cp -r /home/ubuntu/dist/* /var/www/react/ &&
                 sudo systemctl reload nginx
-              INNER
-          EOF
+              '
+            "
