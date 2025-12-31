@@ -40,7 +40,7 @@ jobs:
           rsync -avz \
             -e "ssh -i ~/.ssh/deploy.key -J ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}" \
             dist/ \
-            ${{ secrets.NGINX2A_USER }}@${{ secrets.NGINX2A_HOST }}:/home/ubuntu/react-build/
+            ${{ secrets.NGINX2A_USER }}@${{ secrets.NGINX2A_HOST }}:/home/ubuntu/dist/
 
       - name: React 파일 보내기
         run: |
@@ -48,6 +48,6 @@ jobs:
             -J ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }} \
             ${{ secrets.NGINX2A_USER }}@${{ secrets.NGINX2A_HOST }} << 'EOF'
               sudo rm -rf /var/www/react/*
-              sudo cp -r /home/ubuntu/react-build/* /var/www/react/
+              sudo cp -r /home/ubuntu/dist/* /var/www/react/
               sudo systemctl reload nginx
           EOF
