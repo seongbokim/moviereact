@@ -22,20 +22,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build React (dist)
+      - name: React 파일 빌드
         run: npm run build
 
-      # GitHub Actions → Bastion 접속용 SSH 키
-      - name: Setup SSH
+      - name: ssh 키 접속
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.BASTION_SSH_KEY }}" > ~/.ssh/deploy.key
           chmod 600 ~/.ssh/deploy.key
 
           ssh-keyscan -T 5 -H ${{ secrets.BASTION_HOST }} >> ~/.ssh/known_hosts || true
-
-      # dist → bastion
-      - name: Upload dist to Bastion
+          
+      - name: bastion에 파일 업로드
         run: |
           ssh -i ~/.ssh/deploy.key \
             ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }} \
@@ -46,8 +44,7 @@ jobs:
             dist/ \
             ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}:~/dist/
 
-      # bastion → nginx2a → nginx reload
-      - name: Deploy to nginx2a
+      - name: bastion에서 nginx로 파일 이동 후 재시작
         run: |
           ssh -i ~/.ssh/deploy.key \
             ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }} "
